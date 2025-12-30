@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      # Prometheus self-monitoring
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # URL Service metrics
+      - job_name: 'url-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - urlshortener
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: url-service
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '$1:8000'
+        metrics_path: /metrics
+
+      # Analytics Service metrics
+      - job_name: 'analytics-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - urlshortener
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: analytics-service
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '$1:3001'
+        metrics_path: /metrics
+
+      # User Service metrics
+      - job_name: 'user-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - urlshortener
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: user-service
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: '$1:3002'
+        metrics_path: /metrics

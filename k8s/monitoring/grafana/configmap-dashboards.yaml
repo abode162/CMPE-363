@@ -1,0 +1,457 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    app: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: 'URL Shortener'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+
+  url-shortener-overview.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "mappings": [],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total URLs Created",
+          "type": "stat",
+          "targets": [{"expr": "sum(urlshortener_urls_created_total{status=\"success\"})", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total Redirects",
+          "type": "stat",
+          "targets": [{"expr": "sum(urlshortener_redirects_total{status=\"success\"})", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percentunit"}},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Cache Hit Rate",
+          "type": "stat",
+          "targets": [{"expr": "sum(urlshortener_cache_hits_total) / (sum(urlshortener_cache_hits_total) + sum(urlshortener_cache_misses_total))", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["mean"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Avg Redirect Latency",
+          "type": "stat",
+          "targets": [{"expr": "histogram_quantile(0.50, sum(rate(urlshortener_redirect_latency_seconds_bucket[5m])) by (le))", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 5,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "URLs Created per Minute",
+          "type": "timeseries",
+          "targets": [{"expr": "sum(rate(urlshortener_urls_created_total{status=\"success\"}[1m])) * 60", "legendFormat": "URLs/min", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 6,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Redirects per Minute",
+          "type": "timeseries",
+          "targets": [{"expr": "sum(rate(urlshortener_redirects_total{status=\"success\"}[1m])) * 60", "legendFormat": "Redirects/min", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+          "id": 7,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Redirect Latency Percentiles",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "histogram_quantile(0.50, sum(rate(urlshortener_redirect_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p50", "refId": "A"},
+            {"expr": "histogram_quantile(0.95, sum(rate(urlshortener_redirect_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B"},
+            {"expr": "histogram_quantile(0.99, sum(rate(urlshortener_redirect_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p99", "refId": "C"}
+          ]
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["url-shortener"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "",
+      "title": "URL Shortener Overview",
+      "uid": "url-shortener-overview",
+      "version": 1,
+      "weekStart": ""
+    }
+
+  analytics-dashboard.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total Click Events",
+          "type": "stat",
+          "targets": [{"expr": "sum(analytics_events_tracked_total)", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total Queries",
+          "type": "stat",
+          "targets": [{"expr": "sum(analytics_queries_total)", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}},
+          "gridPos": {"h": 4, "w": 8, "x": 16, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["mean"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Avg Processing Time",
+          "type": "stat",
+          "targets": [{"expr": "histogram_quantile(0.50, sum(rate(analytics_processing_duration_seconds_bucket[5m])) by (le))", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 4,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Events Tracked per Minute",
+          "type": "timeseries",
+          "targets": [{"expr": "sum(rate(analytics_events_tracked_total[1m])) * 60", "legendFormat": "Events/min", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 80, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 5,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Queries by Type",
+          "type": "timeseries",
+          "targets": [{"expr": "sum by (endpoint) (rate(analytics_queries_total[5m])) * 60", "legendFormat": "{{endpoint}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+          "id": 6,
+          "options": {"displayLabels": ["name", "percent"], "legend": {"displayMode": "list", "placement": "right", "showLegend": true}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Clicks by Country (Top 10)",
+          "type": "piechart",
+          "targets": [{"expr": "topk(10, sum by (country) (analytics_events_by_country_total))", "legendFormat": "{{country}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}},
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+          "id": 7,
+          "options": {"displayLabels": ["name", "percent"], "legend": {"displayMode": "list", "placement": "right", "showLegend": true}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Clicks by Browser",
+          "type": "piechart",
+          "targets": [{"expr": "sum by (browser) (analytics_events_by_browser_total)", "legendFormat": "{{browser}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}},
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+          "id": 8,
+          "options": {"displayLabels": ["name", "percent"], "legend": {"displayMode": "list", "placement": "right", "showLegend": true}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Clicks by Device",
+          "type": "piechart",
+          "targets": [{"expr": "sum by (device) (analytics_events_by_device_total)", "legendFormat": "{{device}}", "refId": "A"}]
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["url-shortener", "analytics"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "",
+      "title": "Analytics Dashboard",
+      "uid": "analytics-dashboard",
+      "version": 1,
+      "weekStart": ""
+    }
+
+  user-activity-dashboard.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total Registrations",
+          "type": "stat",
+          "targets": [{"expr": "sum(user_registrations_total{status=\"success\"})", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Total Logins",
+          "type": "stat",
+          "targets": [{"expr": "sum(user_logins_total)", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Failed Logins",
+          "type": "stat",
+          "targets": [{"expr": "sum(user_login_failures_total)", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["mean"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Avg Auth Latency",
+          "type": "stat",
+          "targets": [{"expr": "histogram_quantile(0.50, sum(rate(user_auth_latency_seconds_bucket[5m])) by (le))", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 5,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Registrations & Logins per Hour",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "sum(rate(user_registrations_total{status=\"success\"}[1h])) * 3600", "legendFormat": "Registrations", "refId": "A"},
+            {"expr": "sum(rate(user_logins_total[1h])) * 3600", "legendFormat": "Logins", "refId": "B"}
+          ]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 6,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Failed Logins by Reason",
+          "type": "timeseries",
+          "targets": [{"expr": "sum by (reason) (rate(user_login_failures_total[5m])) * 60", "legendFormat": "{{reason}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+          "id": 7,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Auth Latency by Operation",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "histogram_quantile(0.50, sum by (le, operation) (rate(user_auth_latency_seconds_bucket[5m])))", "legendFormat": "{{operation}} p50", "refId": "A"},
+            {"expr": "histogram_quantile(0.95, sum by (le, operation) (rate(user_auth_latency_seconds_bucket[5m])))", "legendFormat": "{{operation}} p95", "refId": "B"}
+          ]
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["url-shortener", "users"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "",
+      "title": "User Activity Dashboard",
+      "uid": "user-activity-dashboard",
+      "version": 1,
+      "weekStart": ""
+    }
+
+  service-health-dashboard.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "DOWN"}, "1": {"color": "green", "index": 0, "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "gridPos": {"h": 3, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "URL Service",
+          "type": "stat",
+          "targets": [{"expr": "up{job=~\"url-service.*\"}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "DOWN"}, "1": {"color": "green", "index": 0, "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "gridPos": {"h": 3, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Analytics Service",
+          "type": "stat",
+          "targets": [{"expr": "up{job=~\"analytics-service.*\"}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "DOWN"}, "1": {"color": "green", "index": 0, "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "gridPos": {"h": 3, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "User Service",
+          "type": "stat",
+          "targets": [{"expr": "up{job=~\"user-service.*\"}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "DOWN"}, "1": {"color": "green", "index": 0, "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "gridPos": {"h": 3, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Prometheus",
+          "type": "stat",
+          "targets": [{"expr": "up{job=\"prometheus\"}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "reqps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 3},
+          "id": 5,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Request Rate by Service",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "sum(rate(urlshortener_http_requests_total[5m]))", "legendFormat": "URL Service", "refId": "A"},
+            {"expr": "sum(rate(analytics_http_request_duration_seconds_count[5m]))", "legendFormat": "Analytics Service", "refId": "B"},
+            {"expr": "sum(rate(user_http_request_duration_seconds_count[5m]))", "legendFormat": "User Service", "refId": "C"}
+          ]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percentunit"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 3},
+          "id": 6,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Error Rate by Service",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "sum(rate(urlshortener_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(urlshortener_http_requests_total[5m]))", "legendFormat": "URL Service", "refId": "A"},
+            {"expr": "sum(rate(analytics_http_request_duration_seconds_count{status_code=~\"5..\"}[5m])) / sum(rate(analytics_http_request_duration_seconds_count[5m]))", "legendFormat": "Analytics Service", "refId": "B"},
+            {"expr": "sum(rate(user_http_request_duration_seconds_count{status_code=~\"5..\"}[5m])) / sum(rate(user_http_request_duration_seconds_count[5m]))", "legendFormat": "User Service", "refId": "C"}
+          ]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percent"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 11},
+          "id": 7,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "CPU Usage by Service",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "rate(process_cpu_seconds_total{job=~\"url-service.*\"}[5m]) * 100", "legendFormat": "URL Service", "refId": "A"},
+            {"expr": "rate(process_cpu_seconds_total{job=~\"analytics-service.*\"}[5m]) * 100", "legendFormat": "Analytics Service", "refId": "B"},
+            {"expr": "rate(process_cpu_seconds_total{job=~\"user-service.*\"}[5m]) * 100", "legendFormat": "User Service", "refId": "C"}
+          ]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false, "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "bytes"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 11},
+          "id": 8,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+          "title": "Memory Usage by Service",
+          "type": "timeseries",
+          "targets": [
+            {"expr": "process_resident_memory_bytes{job=~\"url-service.*\"}", "legendFormat": "URL Service", "refId": "A"},
+            {"expr": "process_resident_memory_bytes{job=~\"analytics-service.*\"}", "legendFormat": "Analytics Service", "refId": "B"},
+            {"expr": "process_resident_memory_bytes{job=~\"user-service.*\"}", "legendFormat": "User Service", "refId": "C"}
+          ]
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["url-shortener", "health"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "",
+      "title": "Service Health Dashboard",
+      "uid": "service-health-dashboard",
+      "version": 1,
+      "weekStart": ""
+    }

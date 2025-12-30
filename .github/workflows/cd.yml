@@ -1,0 +1,187 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main, master]
+
+env:
+  REGISTRY: ghcr.io
+  KUBE_NAMESPACE: urlshortener
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+jobs:
+  # Gate: Only proceed if CI passed
+  gate:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      should_deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - name: Verify CI Success
+        id: check
+        run: echo "deploy=true" >> $GITHUB_OUTPUT
+
+  # Deploy to Kubernetes
+  deploy:
+    runs-on: ubuntu-latest
+    needs: gate
+    if: needs.gate.outputs.should_deploy == 'true'
+    environment:
+      name: production
+    env:
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      REPO_NAME: ${{ github.repository }}
+      ACTOR_NAME: ${{ github.actor }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: sha
+        run: |
+          SHORT_SHA=$(echo "$HEAD_SHA" | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          REPO_LC=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lc=$REPO_LC" >> $GITHUB_OUTPUT
+
+      - name: Set up kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [ -n "$KUBECONFIG_DATA" ]; then
+            mkdir -p ~/.kube
+            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+            chmod 600 ~/.kube/config
+          fi
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace urlshortener --dry-run=client -o yaml | kubectl apply -f - || true
+
+      - name: Create image pull secret
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username="$ACTOR_NAME" \
+            --docker-password="$GITHUB_TOKEN" \
+            --namespace=urlshortener \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/secrets/
+          kubectl apply -f k8s/configmaps/
+          kubectl apply -R -f k8s/databases/
+          kubectl apply -R -f k8s/services/
+          kubectl apply -f k8s/ingress/
+
+      - name: Update deployments with new images
+        env:
+          SHORT_SHA: ${{ steps.sha.outputs.short_sha }}
+          REPO_LC: ${{ steps.sha.outputs.repo_lc }}
+        run: |
+          kubectl set image deployment/url-service \
+            url-service="ghcr.io/$REPO_LC/url-service:$SHORT_SHA" \
+            --namespace=urlshortener || true
+          kubectl set image deployment/analytics-service \
+            analytics-service="ghcr.io/$REPO_LC/analytics-service:$SHORT_SHA" \
+            --namespace=urlshortener || true
+          kubectl set image deployment/user-service \
+            user-service="ghcr.io/$REPO_LC/user-service:$SHORT_SHA" \
+            --namespace=urlshortener || true
+          kubectl set image deployment/frontend \
+            frontend="ghcr.io/$REPO_LC/frontend:$SHORT_SHA" \
+            --namespace=urlshortener || true
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/url-service --namespace=urlshortener --timeout=300s || true
+          kubectl rollout status deployment/analytics-service --namespace=urlshortener --timeout=300s || true
+          kubectl rollout status deployment/user-service --namespace=urlshortener --timeout=300s || true
+          kubectl rollout status deployment/frontend --namespace=urlshortener --timeout=300s || true
+
+  # Run Smoke Tests
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for services to stabilize
+        run: sleep 30
+
+      - name: Set up kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [ -n "$KUBECONFIG_DATA" ]; then
+            mkdir -p ~/.kube
+            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+            chmod 600 ~/.kube/config
+          fi
+
+      - name: Get service status
+        run: |
+          kubectl get pods -n urlshortener || true
+          kubectl get services -n urlshortener || true
+
+  # Notify on Completion
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    if: always()
+    env:
+      REPO_NAME: ${{ github.repository }}
+      ACTOR_NAME: ${{ github.actor }}
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ] && [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests | ${{ needs.smoke-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+
+  # Rollback on Failure
+  rollback:
+    runs-on: ubuntu-latest
+    needs: smoke-tests
+    if: failure()
+    steps:
+      - name: Set up kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [ -n "$KUBECONFIG_DATA" ]; then
+            mkdir -p ~/.kube
+            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+            chmod 600 ~/.kube/config
+          fi
+
+      - name: Rollback deployments
+        run: |
+          echo "Rolling back deployments..."
+          kubectl rollout undo deployment/url-service --namespace=urlshortener || true
+          kubectl rollout undo deployment/analytics-service --namespace=urlshortener || true
+          kubectl rollout undo deployment/user-service --namespace=urlshortener || true
+          kubectl rollout undo deployment/frontend --namespace=urlshortener || true
+          echo "Rollback completed"

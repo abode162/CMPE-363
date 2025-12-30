@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: urlshortener
+data:
+  PORT: "3002"
+  NODE_ENV: "production"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  JWT_EXPIRES_IN: "7d"

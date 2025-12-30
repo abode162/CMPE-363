@@ -1,0 +1,72 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: urlshortener-ingress
+  namespace: urlshortener
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "30"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Guest-Claim-Token, X-Internal-API-Key"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: urlshortener.local
+    http:
+      paths:
+      # URL Service API endpoints
+      - path: /api/urls
+        pathType: Prefix
+        backend:
+          service:
+            name: url-service
+            port:
+              number: 8000
+      # Short URL redirects
+      - path: /s
+        pathType: Prefix
+        backend:
+          service:
+            name: url-service
+            port:
+              number: 8000
+      # Auth Service API
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3002
+      # Analytics Service API
+      - path: /api/analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 3001
+      # Health endpoint
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: url-service
+            port:
+              number: 8000
+      # Frontend - catch all (must be last)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80

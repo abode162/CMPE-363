@@ -1,0 +1,23 @@
+# CI-specific overrides for integration testing
+# Exposes service ports to host for health checks
+
+services:
+  # Disable gateway in CI 
+  gateway:
+    profiles:
+      - disabled
+
+  # Expose URL Service port for health checks
+  url-service:
+    ports:
+      - "8000:8000"
+
+  # Expose Analytics Service port for health checks
+  analytics-service:
+    ports:
+      - "3001:3001"
+
+  # Expose User Service port for health checks
+  user-service:
+    ports:
+      - "3002:3002"
